@@ -7,6 +7,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
@@ -24,16 +25,20 @@ public class StringUtils {
 				String [] words = line.toLowerCase().split(" ");
 
 				for(int i=0;i<words.length;i++){
+					words[i]=words[i].replaceAll("\\n+", " ");
 					words[i]=words[i].replaceAll("[^a-z0-9]+", "");
-					words[i]=words[i].toLowerCase().trim();				
-
-					if(!(Stats.stopWords.contains(words[i])|| words[i].matches("\\s+")|| words[i].length()<2)){
-						addToFrequencyList(words[i]);
-						// shift this if needed
-						tokensForPage.add(words[i]);
+					words[i]=words[i].toLowerCase().trim();
+					
+					//for term positions
+					if(!(words[i].matches("\\n+")||words[i].matches("\\s+")|| words[i].length()<2)){
+						tokensForPage.add(words[i]);					
+						if(!(Stats.stopWords.contains(words[i]))){
+							addToFrequencyList(words[i]);
+						}	
 					}	
 				}
 			}
+			
 		} catch (Exception e){
 			e.printStackTrace();
 		}
@@ -46,9 +51,21 @@ public class StringUtils {
 		
 	}
 	
-	public ArrayList<Integer> findTermPositions(){
-		//implement this
-		return new ArrayList<Integer>();
+	public HashMap<String,ArrayList<Integer>> findTermPositions(ArrayList<String> terms){
+		HashMap<String,ArrayList<Integer>> termPositions = new HashMap<String,ArrayList<Integer>>(); 
+		for(int i=0;i<terms.size();i++){
+			ArrayList<Integer> positions;
+			if(termPositions.get(terms.get(i))==null){
+				positions = new ArrayList<Integer>();
+			} else {
+				positions = termPositions.get(terms.get(i));
+			}
+			
+			positions.add(i);
+			termPositions.put(terms.get(i), positions);
+		}
+		
+		return termPositions;
 	}
 	
 	public String getSubDomain(String url){

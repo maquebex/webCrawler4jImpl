@@ -49,27 +49,7 @@ public class MongoDBConnector implements Runnable{
 	    document.append("_id", "URL_ID");
 	    document.append("seq", 1);
 	    countersCollection.insertOne(document);
-	}
-
-	public void saveIndexBlock(MongoCollection<Document> indexEntry, HashMap<String, ArrayList<InvertedIndexEntry>> invertedIndexItems){
-		for(String term:invertedIndexItems.keySet()){
-			Document doc = new Document();
-			doc.append("term", term);
-			ArrayList<InvertedIndexEntry> invertedIndexItem = invertedIndexItems.get(term);
-			ArrayList<Document> docList = new ArrayList<Document>();
-			for(InvertedIndexEntry invertedIndex: invertedIndexItem){
-				Document listdoc = new Document();				
-				listdoc.append("doc_id", invertedIndex.getDocId());
-				listdoc.append("tf", invertedIndex.getTermFrequency());
-				listdoc.append("positions", Arrays.asList(invertedIndex.getTermPositions()));
-				docList.add(listdoc);
-			}
-			doc.append("docs", Arrays.asList(docList));
-			indexEntry.insertOne(doc);
-		}
-		
-		System.out.println("Done");
-	}
+	}	
 	
 	public static Object getNextSequence(String name) {
 

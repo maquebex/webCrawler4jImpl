@@ -1,6 +1,3 @@
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -58,18 +55,18 @@ public class Controller {
         	DBWrapper dbwrapper = new DBWrapper();
         	MongoCollection<Document> collection = Constants.db.getCollection("webcrawler_data");
         	HashMap<String, ArrayList<InvertedIndexEntry>> invertedIndex = new HashMap<String, ArrayList<InvertedIndexEntry>>();
-        	MongoDBConnector mongoConnector = new MongoDBConnector();
         	
         	for(int i=1;i<=Constants.DB_ROW_COUNT;i++){
         		HashMap<String,HashMap<String,String>> records =dbwrapper.fetchOne(collection,i);
-        		ArrayList<Integer> termPositions=null;
+        		HashMap<String,ArrayList<Integer>> termPositions=null;
         		
         		for(String url:records.keySet()){
-        			stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
-        			termPositions = stringUtils.findTermPositions();
+        			ArrayList<String> terms = stringUtils.tokenizePage(records.get(url).get("TEXT_RES"));
+        			// positions of all terms in page
+        			termPositions = stringUtils.findTermPositions(terms);
         			//records.get(url).get("HTML_RES");
         		}
-        		
+        		//below processing per page
         		for(String token:Stats.tokenfrequencyList.keySet()){
         			ArrayList<InvertedIndexEntry> docItemList;
         			if(invertedIndex.get(token)==null){
@@ -81,18 +78,21 @@ public class Controller {
         			InvertedIndexEntry docEntry = new InvertedIndexEntry();
         			docEntry.setDocId(i);
         			docEntry.setTermFrequency(Stats.tokenfrequencyList.get(token));
-        			docEntry.setTermPositions(termPositions);
+        			docEntry.setTermPositions(termPositions.get(token));
         			docItemList.add(docEntry);
-        			invertedIndex.put(token,docItemList);        				
+        			invertedIndex.put(token,docItemList);        			
         		}
         		
-        		if((i%1000)==0){
-        			//write after every 1000 records
+        		//flush token frequency as it is per page
+        		System.out.println(Stats.tokenfrequencyList.toString());
+    			Stats.tokenfrequencyList.clear();
+    			
+        		if((i%100)==0){
+        			//write after every 100 records
         			MongoCollection<Document> invertedIndexCollection = Constants.db.getCollection("inverted_index");
-        			mongoConnector.saveIndexBlock(invertedIndexCollection, invertedIndex);
+        			dbwrapper.saveIndexBlock(invertedIndexCollection, invertedIndex);
         			//flush
-        			invertedIndex.clear();
-        			Stats.tokenfrequencyList.clear();
+        			invertedIndex.clear();        			
         		}
         	}
         	/*StringUtils stringUtils = new StringUtils();

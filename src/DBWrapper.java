@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.bson.Document;
@@ -32,5 +33,46 @@ public class DBWrapper {
 		});
 		
 		return record;
-	}	
+	}
+	
+	public void saveIndexBlock(MongoCollection<Document> indexEntry, HashMap<String, ArrayList<InvertedIndexEntry>> invertedIndexItems){
+		for(String term:invertedIndexItems.keySet()){
+			Document doc = new Document();
+			doc.append("term", term);
+			ArrayList<InvertedIndexEntry> invertedIndexItem = invertedIndexItems.get(term);
+			ArrayList<Document> docList = new ArrayList<Document>();
+			for(InvertedIndexEntry invertedIndex: invertedIndexItem){
+				Document listdoc = new Document();				
+				listdoc.append("doc_id", invertedIndex.getDocId());
+				listdoc.append("tf", invertedIndex.getTermFrequency());
+				listdoc.append("positions", invertedIndex.getTermPositions());
+				docList.add(listdoc);
+			}
+			doc.append("docs", docList);
+			try{
+				FindIterable<Document> entry = indexEntry.find(Filters.eq("term",term)).limit(1);
+				if(entry.first()==null){
+					System.out.println("Insert");
+					indexEntry.insertOne(doc);
+					
+				} else {
+					System.out.println("Update");
+					entry.forEach(new Block<Document>() {
+					    @Override
+					    public void apply(final Document document) {
+					    	@SuppressWarnings("unchecked")
+							ArrayList<Document> doclisting =(ArrayList<Document>) document.get("docs");
+					    	doclisting.addAll(docList);
+					    	indexEntry.findOneAndUpdate(Filters.eq("term",term), new Document("$set",document.append("docs",doclisting)));  			    	
+					    }
+					});
+				}
+				
+			} catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		
+		System.out.println("Done");
+	}
 }
