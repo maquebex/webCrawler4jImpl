@@ -12,11 +12,202 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 
-public class StringUtils {
+import org.jsoup.Jsoup;
 
+public class StringUtils {
+	
+	public StringUtils(){
+		loadStopWords();		
+	} 
+	
+	public HashSet<String> getTitleTokens(String page){
+		String titleString="";
+		HashSet<String> titleTokens = new HashSet<String>();
+		try{
+			titleString= Jsoup.parse(page).title();//page.substring(page.indexOf("<title>")+7,page.indexOf("</title>"));
+		
+		} catch (Exception e){
+			System.out.println(e.getMessage());
+		}
+		
+		if(titleString.length()!=0){
+			ArrayList<String> list =tokenizePage(titleString);			
+			titleTokens.addAll(list);
+		}
+		
+		return titleTokens;
+	}
+	
+	public HashSet<String> getH1(String page){
+		int h1Index=0;
+		HashSet<String> h1Tags = new HashSet<String>();
+		
+		while(h1Index<page.length()){
+			try{
+				int startIndex = page.indexOf("<h1",h1Index);
+				int endIndex = page.indexOf("</h1>",startIndex);
+				String h1String = page.substring(startIndex,endIndex);
+				
+				if(!h1String.contains("class=\"ahem\"")){
+					h1String = Jsoup.parse(h1String).text();//page.substring(page.indexOf(">",startIndex)+1,endIndex);
+					ArrayList<String> h1list = tokenizePage(h1String);
+					h1Tags.addAll(h1list);
+				}
+				h1Index = startIndex + 4;				
+				
+			} catch( StringIndexOutOfBoundsException e){
+				System.out.println("Error getting h1 tag "+e.getMessage());
+				h1Index = page.length();
+			}
+		}
+		
+		return h1Tags;
+	}
+	
+	public HashSet<String> getH2(String page){
+		int h2Index=0;
+		HashSet<String> h2Tags = new HashSet<String>();
+		
+		while(h2Index<page.length()){
+			try{
+				int startIndex = page.indexOf("<h2",h2Index);
+				int endIndex = page.indexOf("</h2>",startIndex);
+				String h2String = page.substring(startIndex,endIndex);
+				
+				if(!h2String.contains("class=\"ahem\"")){
+					h2String = Jsoup.parse(h2String).text();//page.substring(page.indexOf(">",startIndex)+1,endIndex);
+					ArrayList<String> h2list = tokenizePage(h2String);
+					h2Tags.addAll(h2list);
+				}
+				h2Index = startIndex + 4;				
+				
+			} catch( StringIndexOutOfBoundsException e){
+				System.out.println("Error getting h2 tag "+e.getMessage());
+				h2Index = page.length();
+			}
+		}
+		
+		return h2Tags;
+		
+	}
+	
+	public HashSet<String> getH3(String page){
+		int h3Index=0;
+		HashSet<String> h3Tags = new HashSet<String>();
+		
+		while(h3Index < page.length()){
+			try{
+				int startIndex = page.indexOf("<h3",h3Index);
+				int endIndex = page.indexOf("</h3>",startIndex);
+				String h3String = page.substring(startIndex,endIndex);
+				
+				if(!h3String.contains("class=\"ahem\"")){
+					h3String = Jsoup.parse(h3String).text();//page.substring(page.indexOf(">",startIndex)+1,endIndex);
+					ArrayList<String> h3list = tokenizePage(h3String);
+					h3Tags.addAll(h3list);
+				}
+				h3Index = startIndex + 4;				
+				
+			} catch( StringIndexOutOfBoundsException e){
+				System.out.println("Error getting h3 tag "+e.getMessage());
+				h3Index = page.length();
+			}
+		}
+		
+		return h3Tags;
+		
+	}
+	
+	public HashSet<String> getB(String page){
+		int bIndex=0;
+		HashSet<String> bTags = new HashSet<String>();
+		
+		while(bIndex<page.length()){
+			try{
+				int startIndex = page.indexOf("<b>",bIndex);
+				int endIndex = page.indexOf("</b>",startIndex);
+				String bString = page.substring(startIndex,endIndex);
+				bString = Jsoup.parse(bString).text();
+				ArrayList<String> blist = tokenizePage(bString);
+				bTags.addAll(blist);
+				bIndex = startIndex + 3;				
+				
+			} catch( StringIndexOutOfBoundsException e){
+				System.out.println("Error getting b tag "+e.getMessage());
+				bIndex = page.length();
+			}
+		}
+		
+		return bTags;
+		
+	}
+	
+	public HashSet<String> getAnchorData(String page){
+		int aIndex=0;
+		HashSet<String> aTags = new HashSet<String>();
+		
+		while(aIndex<page.length()){
+			try{
+				int startIndex = page.indexOf("<a",aIndex);
+				int endIndex = page.indexOf("</a>",startIndex);
+				String aString = page.substring(startIndex,endIndex);
+				aString = Jsoup.parse(aString).text();
+				ArrayList<String> alist = tokenizePage(aString);
+				aTags.addAll(alist);
+				aIndex = startIndex + 2;				
+				
+			} catch( StringIndexOutOfBoundsException e){
+				System.out.println("Error getting a tag "+e.getMessage());
+				aIndex = page.length();
+			}
+		}
+		System.out.println("a tags "+aTags.toString());
+		return aTags;
+	}
+	
+	public HashSet<String> getMetaData(String page){
+		int metaIndex=0;
+		HashSet<String> metaTags = new HashSet<String>();
+		
+		while(metaIndex<page.length()){
+			try{
+				int startIndex = page.indexOf("<meta",metaIndex);
+				int endIndex = page.indexOf(">",startIndex);
+				
+				String metaString = page.substring(startIndex,endIndex+1);
+				//System.out.println("Meta String "+metaString);
+				
+				if(metaString.contains("name")){
+					int st = metaString.indexOf("name=")+6;
+					int end = metaString.indexOf("\"",st);
+					
+					String metaType = metaString.substring(st,end);
+					//System.out.println("Meta Type "+metaType);
+					
+					if(metaType.equals("keywords")|| metaType.equals("description")){
+						int s = metaString.indexOf("content=")+9;
+						int e = metaString.indexOf("\"",s);
+						String metaTag = metaString.substring(s,e);
+						ArrayList<String> metaTokens = tokenizePage(metaTag);
+						metaTags.addAll(metaTokens);
+					}
+				}
+				metaIndex = startIndex + 5;
+			
+			} catch( StringIndexOutOfBoundsException e){
+				System.out.println("Error getting meta tag "+e.getMessage());
+				metaIndex=page.length();
+			}
+		}
+		
+		return metaTags;
+	} 
 	public ArrayList<String> tokenizePage(String page){
-		loadStopWords();
 		ArrayList<String> tokensForPage = new ArrayList<String>(); // should not be a set. need to generate separate token list for each page for 3-grams
+		if(page.length()==0){
+			return tokensForPage;
+		}
+		
 		BufferedReader bf=new BufferedReader(new StringReader(page));		
 		String line;
 		try{
@@ -31,9 +222,10 @@ public class StringUtils {
 					
 					//for term positions
 					if(!(words[i].matches("\\n+")||words[i].matches("\\s+")|| words[i].length()<2)){
-						tokensForPage.add(words[i]);					
+						//tokensForPage.add(words[i]);					
 						if(!(Stats.stopWords.contains(words[i]))){
-							addToFrequencyList(words[i]);
+							tokensForPage.add(words[i]);
+							//addToFrequencyList(words[i]);
 						}	
 					}	
 				}
